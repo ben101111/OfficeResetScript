@@ -18,13 +18,14 @@ function Write-CenteredAnsiText {
         [int]$VisibleLength
     )
 
-    $Breite = Get-ConsoleWidth
-    $AbstandLinks = [Math]::Max(
+    $ConsoleWidth = Get-ConsoleWidth
+
+    $LeftPadding = [Math]::Max(
         0,
-        [Math]::Floor(($Breite - $VisibleLength) / 2)
+        [Math]::Floor(($ConsoleWidth - $VisibleLength) / 2)
     )
 
-    Write-Host ((" " * $AbstandLinks) + $Text)
+    Write-Host ((" " * $LeftPadding) + $Text)
 }
 
 function Write-CenteredText {
@@ -35,34 +36,35 @@ function Write-CenteredText {
         [ConsoleColor]$ForegroundColor = [ConsoleColor]::Gray
     )
 
-    $Breite = Get-ConsoleWidth
-    $AbstandLinks = [Math]::Max(
+    $ConsoleWidth = Get-ConsoleWidth
+
+    $LeftPadding = [Math]::Max(
         0,
-        [Math]::Floor(($Breite - $Text.Length) / 2)
+        [Math]::Floor(($ConsoleWidth - $Text.Length) / 2)
     )
 
-    Write-Host ((" " * $AbstandLinks) + $Text) -ForegroundColor $ForegroundColor
+    Write-Host ((" " * $LeftPadding) + $Text) -ForegroundColor $ForegroundColor
 }
 
 function Write-MenuSeparator {
-    $Breite = Get-ConsoleWidth
+    $ConsoleWidth = Get-ConsoleWidth
 
-    # Zwei Zeichen weniger vermeiden automatischen Zeilenumbruch.
-    $LinienBreite = [Math]::Max(40, $Breite - 2)
+    # Verhindert einen automatischen Umbruch am rechten Rand.
+    $LineWidth = [Math]::Max(40, $ConsoleWidth - 2)
 
-    Write-Host ("=" * $LinienBreite) -ForegroundColor DarkGray
+    Write-Host ("=" * $LineWidth) -ForegroundColor DarkGray
 }
 
 function Read-CenteredChoice {
-    $Breite = Get-ConsoleWidth
-    $EingabePrefix = "> "
+    $ConsoleWidth = Get-ConsoleWidth
+    $Prompt = "> "
 
-    $AbstandLinks = [Math]::Max(
+    $LeftPadding = [Math]::Max(
         0,
-        [Math]::Floor(($Breite - $EingabePrefix.Length) / 2)
+        [Math]::Floor(($ConsoleWidth - $Prompt.Length) / 2)
     )
 
-    Write-Host ((" " * $AbstandLinks) + $EingabePrefix) `
+    Write-Host ((" " * $LeftPadding) + $Prompt) `
         -NoNewline `
         -ForegroundColor Cyan
 
@@ -70,42 +72,41 @@ function Read-CenteredChoice {
 }
 
 function Write-BensToolsBanner {
-    $esc = [char]27
+    $Esc = [char]27
 
-    # Sichtbare Breite der ASCII-Art.
-    # Falls die Grafik noch minimal links/rechts liegt:
-    # kleiner = weiter nach rechts, größer = weiter nach links.
-    $BannerBreite = 100
+    # Je kleiner dieser Wert, desto weiter wandert die Überschrift nach rechts.
+    # Je größer dieser Wert, desto weiter wandert die Überschrift nach links.
+    $BannerWidth = 100
 
-    $Zeilen = @(
-        "$esc[0;37m█$esc[0;37;47m   $esc[0;37m████▄ ▄$esc[0;37;47m   $esc[0;37m█████ $esc[0;37;47m█   $esc[0;37m████▄ ▄$esc[0;37;47m   $esc[0;37m█████      ██████$esc[0;37;47m   $esc[0;37m█████ ▄$esc[0;37;47m   $esc[0;37m████▄ ▄$esc[0;37;47m   $esc[0;37m████▄ █$esc[0;37;47m   $esc[0;37m      ▄$esc[0;37;47m   $esc[0;37m█████$esc[0m",
+    $BannerLines = @(
+        "$Esc[0;37m█$Esc[0;37;47m   $Esc[0;37m████▄ ▄$Esc[0;37;47m   $Esc[0;37m█████ $Esc[0;37;47m█   $Esc[0;37m████▄ ▄$Esc[0;37;47m   $Esc[0;37m█████      ██████$Esc[0;37;47m   $Esc[0;37m█████ ▄$Esc[0;37;47m   $Esc[0;37m████▄ ▄$Esc[0;37;47m   $Esc[0;37m████▄ █$Esc[0;37;47m   $Esc[0;37m      ▄$Esc[0;37;47m   $Esc[0;37m█████$Esc[0m",
 
-        "$esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m      $esc[0;97;47m░░$esc[0;37m██ $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m      $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0m",
+        "$Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m      $Esc[0;97;47m░░$Esc[0;37m██ $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m      $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0m",
 
-        "$esc[0;97;47m▒▒░░$esc[0;37m $esc[0;97;47m▒▒░░$esc[0;37m $esc[0;97;47m▒▒░░$esc[0;37m      $esc[0;97;47m▒▒░░$esc[0;37m $esc[0;97;47m▒▒░░$esc[0;37m $esc[0;97;47m▒▒░░$esc[0;37m $esc[0;97;47m▒▒░░$esc[0;37m           $esc[0;97;47m▒▒░░$esc[0;37m      $esc[0;97;47m▒▒░░$esc[0;37m $esc[0;97;47m▒▒░░$esc[0;37m $esc[0;97;47m▒▒░░$esc[0;37m $esc[0;97;47m▒▒░░$esc[0;37m $esc[0;97;47m▒▒░░$esc[0;37m      $esc[0;97;47m▒▒░░$esc[0;37m $esc[0;97;47m▒▒░░$esc[0m",
+        "$Esc[0;97;47m▒▒░░$Esc[0;37m $Esc[0;97;47m▒▒░░$Esc[0;37m $Esc[0;97;47m▒▒░░$Esc[0;37m      $Esc[0;97;47m▒▒░░$Esc[0;37m $Esc[0;97;47m▒▒░░$Esc[0;37m $Esc[0;97;47m▒▒░░$Esc[0;37m $Esc[0;97;47m▒▒░░$Esc[0;37m           $Esc[0;97;47m▒▒░░$Esc[0;37m      $Esc[0;97;47m▒▒░░$Esc[0;37m $Esc[0;97;47m▒▒░░$Esc[0;37m $Esc[0;97;47m▒▒░░$Esc[0;37m $Esc[0;97;47m▒▒░░$Esc[0;37m $Esc[0;97;47m▒▒░░$Esc[0;37m      $Esc[0;97;47m▒▒░░$Esc[0;37m $Esc[0;97;47m▒▒░░$Esc[0m",
 
-        "$esc[0;97;47m▓▓▒▒$esc[0;37m $esc[0;97;47m▓▓▒$esc[0;37m▀ $esc[0;97;47m▓▓▒▒▒▓$esc[0;37m    $esc[0;97;47m▓▓▒▒$esc[0;37m $esc[0;97;47m▓▓▒▒$esc[0;37m $esc[0;97;47m▓▓▒▒$esc[0;37m                $esc[0;97;47m▓▓▒▒$esc[0;37m      $esc[0;97;47m▓▓▒▒$esc[0;37m $esc[0;97;47m▓▓▒▒$esc[0;37m $esc[0;97;47m▓▓▒▒$esc[0;37m $esc[0;97;47m▓▓▒▒$esc[0;37m $esc[0;97;47m▓▓▒▒$esc[0;37m      $esc[0;97;47m▓▓▒▒$esc[0;37m     $esc[0m",
+        "$Esc[0;97;47m▓▓▒▒$Esc[0;37m $Esc[0;97;47m▓▓▒$Esc[0;37m▀ $Esc[0;97;47m▓▓▒▒▒▓$Esc[0;37m    $Esc[0;97;47m▓▓▒▒$Esc[0;37m $Esc[0;97;47m▓▓▒▒$Esc[0;37m $Esc[0;97;47m▓▓▒▒$Esc[0;37m                $Esc[0;97;47m▓▓▒▒$Esc[0;37m      $Esc[0;97;47m▓▓▒▒$Esc[0;37m $Esc[0;97;47m▓▓▒▒$Esc[0;37m $Esc[0;97;47m▓▓▒▒$Esc[0;37m $Esc[0;97;47m▓▓▒▒$Esc[0;37m $Esc[0;97;47m▓▓▒▒$Esc[0;37m      $Esc[0;97;47m▓▓▒▒$Esc[0;37m     $Esc[0m",
 
-        "$esc[0;97;47m██▓▓▓██$esc[0;97m▄$esc[0;37m  $esc[0;97;47m██▓▓$esc[0;37m $esc[0;97m▄▄▄▄$esc[0;37m $esc[0;97;47m██▓▓$esc[0;37m $esc[0;97;47m██▓▓$esc[0;37m $esc[0;97m▀$esc[0;97;47m█▓▓▓▓▓$esc[0;97m▄$esc[0;37m            $esc[0;97;47m██▓▓$esc[0;37m      $esc[0;97;47m██▓▓$esc[0;37m $esc[0;97;47m██▓▓$esc[0;37m $esc[0;97;47m██▓▓$esc[0;37m $esc[0;97;47m██▓▓$esc[0;37m $esc[0;97;47m██▓▓$esc[0;37m      $esc[0;97m▀$esc[0;97;47m█▓▓▓▓▓$esc[0;97m▄$esc[0;37m $esc[0m",
+        "$Esc[0;97;47m██▓▓▓██$Esc[0;97m▄$Esc[0;37m  $Esc[0;97;47m██▓▓$Esc[0;37m $Esc[0;97m▄▄▄▄$Esc[0;37m $Esc[0;97;47m██▓▓$Esc[0;37m $Esc[0;97;47m██▓▓$Esc[0;37m $Esc[0;97m▀$Esc[0;97;47m█▓▓▓▓▓$Esc[0;97m▄$Esc[0;37m            $Esc[0;97;47m██▓▓$Esc[0;37m      $Esc[0;97;47m██▓▓$Esc[0;37m $Esc[0;97;47m██▓▓$Esc[0;37m $Esc[0;97;47m██▓▓$Esc[0;37m $Esc[0;97;47m██▓▓$Esc[0;37m $Esc[0;97;47m██▓▓$Esc[0;37m      $Esc[0;97m▀$Esc[0;97;47m█▓▓▓▓▓$Esc[0;97m▄$Esc[0;37m $Esc[0m",
 
-        "$esc[0;97;47m▓▓██$esc[0;37m $esc[0;97;47m▓▓██$esc[0;37m $esc[0;97;47m▓▓██$esc[0;37m $esc[0;97;47m▓▓██$esc[0;37m $esc[0;97;47m▓▓██$esc[0;37m $esc[0;97;47m▓▓██$esc[0;37m      $esc[0;97;47m▓▓██$esc[0;37m           $esc[0;97;47m▓▓██$esc[0;37m      $esc[0;97;47m▓▓██$esc[0;37m $esc[0;97;47m▓▓██$esc[0;37m $esc[0;97;47m▓▓██$esc[0;37m $esc[0;97;47m▓▓██$esc[0;37m $esc[0;97;47m▓▓██$esc[0;37m           $esc[0;97;47m▓▓██$esc[0m",
+        "$Esc[0;97;47m▓▓██$Esc[0;37m $Esc[0;97;47m▓▓██$Esc[0;37m $Esc[0;97;47m▓▓██$Esc[0;37m $Esc[0;97;47m▓▓██$Esc[0;37m $Esc[0;97;47m▓▓██$Esc[0;37m $Esc[0;97;47m▓▓██$Esc[0;37m      $Esc[0;97;47m▓▓██$Esc[0;37m           $Esc[0;97;47m▓▓██$Esc[0;37m      $Esc[0;97;47m▓▓██$Esc[0;37m $Esc[0;97;47m▓▓██$Esc[0;37m $Esc[0;97;47m▓▓██$Esc[0;37m $Esc[0;97;47m▓▓██$Esc[0;37m $Esc[0;97;47m▓▓██$Esc[0;37m           $Esc[0;97;47m▓▓██$Esc[0m",
 
-        "$esc[0;97;47m▒▒▓▓$esc[0;37m $esc[0;97;47m▒▒▓▓$esc[0;37m $esc[0;97;47m▒▒▓▓$esc[0;30mo$esc[0;97;47m▒▒▓▓$esc[0;37m $esc[0;97;47m▒▒▓▓$esc[0;37m $esc[0;97;47m▒▒▓▓$esc[0;37m $esc[0;97;47m▒▒▓▓$esc[0;37m $esc[0;97;47m▒▒▓▓$esc[0;37m           $esc[0;97;47m▒▒▓▓$esc[0;37m      $esc[0;97;47m▒▒▓▓$esc[0;37m $esc[0;97;47m▒▒▓▓$esc[0;37m $esc[0;97;47m▒▒▓▓$esc[0;37m $esc[0;97;47m▒▒▓▓$esc[0;37m $esc[0;97;47m▒▒▓▓$esc[0;37m      $esc[0;97;47m▒▒▓▓$esc[0;37m $esc[0;97;47m▒▒▓▓$esc[0m",
+        "$Esc[0;97;47m▒▒▓▓$Esc[0;37m $Esc[0;97;47m▒▒▓▓$Esc[0;37m $Esc[0;97;47m▒▒▓▓$Esc[0;30mo$Esc[0;97;47m▒▒▓▓$Esc[0;37m $Esc[0;97;47m▒▒▓▓$Esc[0;37m $Esc[0;97;47m▒▒▓▓$Esc[0;37m $Esc[0;97;47m▒▒▓▓$Esc[0;37m $Esc[0;97;47m▒▒▓▓$Esc[0;37m           $Esc[0;97;47m▒▒▓▓$Esc[0;37m      $Esc[0;97;47m▒▒▓▓$Esc[0;37m $Esc[0;97;47m▒▒▓▓$Esc[0;37m $Esc[0;97;47m▒▒▓▓$Esc[0;37m $Esc[0;97;47m▒▒▓▓$Esc[0;37m $Esc[0;97;47m▒▒▓▓$Esc[0;37m      $Esc[0;97;47m▒▒▓▓$Esc[0;37m $Esc[0;97;47m▒▒▓▓$Esc[0m",
 
-        "$esc[0;97;47m░░▒▒$esc[0;37m $esc[0;97;47m░░▒▒$esc[0;37m $esc[0;97;47m░░▒▒$esc[0;37m $esc[0;97;47m░░▒▒$esc[0;37m $esc[0;97;47m░░▒▒$esc[0;37m $esc[0;97;47m░░▒▒$esc[0;37m $esc[0;97;47m░░▒▒$esc[0;37m $esc[0;97;47m░░▒▒$esc[0;37m           $esc[0;97;47m░░▒▒$esc[0;37m      $esc[0;97;47m░░▒▒$esc[0;37m $esc[0;97;47m░░▒▒$esc[0;37m $esc[0;97;47m░░▒▒$esc[0;37m $esc[0;97;47m░░▒▒$esc[0;37m $esc[0;97;47m░░▒▒$esc[0;37m      $esc[0;97;47m░░▒▒$esc[0;37m $esc[0;97;47m░░▒▒$esc[0m",
+        "$Esc[0;97;47m░░▒▒$Esc[0;37m $Esc[0;97;47m░░▒▒$Esc[0;37m $Esc[0;97;47m░░▒▒$Esc[0;37m $Esc[0;97;47m░░▒▒$Esc[0;37m $Esc[0;97;47m░░▒▒$Esc[0;37m $Esc[0;97;47m░░▒▒$Esc[0;37m $Esc[0;97;47m░░▒▒$Esc[0;37m $Esc[0;97;47m░░▒▒$Esc[0;37m           $Esc[0;97;47m░░▒▒$Esc[0;37m      $Esc[0;97;47m░░▒▒$Esc[0;37m $Esc[0;97;47m░░▒▒$Esc[0;37m $Esc[0;97;47m░░▒▒$Esc[0;37m $Esc[0;97;47m░░▒▒$Esc[0;37m $Esc[0;97;47m░░▒▒$Esc[0;37m      $Esc[0;97;47m░░▒▒$Esc[0;37m $Esc[0;97;47m░░▒▒$Esc[0m",
 
-        "$esc[0;97;47m  ░░$esc[0;37m $esc[0;97;47m  ░░$esc[0;37m $esc[0;97;47m  ░░$esc[0;37m $esc[0;97;47m  ░░$esc[0;37m $esc[0;97;47m  ░░$esc[0;37m $esc[0;97;47m  ░░$esc[0;37m $esc[0;97;47m  ░░$esc[0;37m $esc[0;97;47m  ░░$esc[0;37m           $esc[0;97;47m  ░░$esc[0;37m      $esc[0;97;47m  ░░$esc[0;37m $esc[0;97;47m  ░░$esc[0;37m $esc[0;97;47m  ░░$esc[0;37m $esc[0;97;47m  ░░$esc[0;37m $esc[0;97;47m  ░░$esc[0;37m      $esc[0;97;47m  ░░$esc[0;37m $esc[0;97;47m  ░░$esc[0m",
+        "$Esc[0;97;47m  ░░$Esc[0;37m $Esc[0;97;47m  ░░$Esc[0;37m $Esc[0;97;47m  ░░$Esc[0;37m $Esc[0;97;47m  ░░$Esc[0;37m $Esc[0;97;47m  ░░$Esc[0;37m $Esc[0;97;47m  ░░$Esc[0;37m $Esc[0;97;47m  ░░$Esc[0;37m $Esc[0;97;47m  ░░$Esc[0;37m           $Esc[0;97;47m  ░░$Esc[0;37m      $Esc[0;97;47m  ░░$Esc[0;37m $Esc[0;97;47m  ░░$Esc[0;37m $Esc[0;97;47m  ░░$Esc[0;37m $Esc[0;97;47m  ░░$Esc[0;37m $Esc[0;97;47m  ░░$Esc[0;37m      $Esc[0;97;47m  ░░$Esc[0;37m $Esc[0;97;47m  ░░$Esc[0m",
 
-        "$esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m           $esc[0;97;47m░░  $esc[0;37m      $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0;37m $esc[0;97;47m░░  $esc[0m",
+        "$Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m           $Esc[0;97;47m░░  $Esc[0;37m      $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0;37m $Esc[0;97;47m░░  $Esc[0m",
 
-        "$esc[0;97;47m▒▒░░▒▒▒░$esc[0;37m▀ ▀$esc[0;97;47m▒░░░▒▒░░$esc[0;37m $esc[0;97;47m▒▒░░$esc[0;37m $esc[0;97;47m▒▒░▒$esc[0;37m $esc[0;97;47m▒▒░░░▒▒░$esc[0;37m▀           $esc[0;97;47m▒▒░░$esc[0;37m      ▀$esc[0;97;47m▒░░▒▒▒░$esc[0;37m▀ ▀$esc[0;97;47m▒░░▒▒▒░$esc[0;37m▀ ▀$esc[0;97;47m▒░░░▒▒░░$esc[0;37m $esc[0;97;47m▒▒░░░▒▒░$esc[0;37m▀$esc[0m"
+        "$Esc[0;97;47m▒▒░░▒▒▒░$Esc[0;37m▀ ▀$Esc[0;97;47m▒░░░▒▒░░$Esc[0;37m $Esc[0;97;47m▒▒░░$Esc[0;37m $Esc[0;97;47m▒▒░▒$Esc[0;37m $Esc[0;97;47m▒▒░░░▒▒░$Esc[0;37m▀           $Esc[0;97;47m▒▒░░$Esc[0;37m      ▀$Esc[0;97;47m▒░░▒▒▒░$Esc[0;37m▀ ▀$Esc[0;97;47m▒░░▒▒▒░$Esc[0;37m▀ ▀$Esc[0;97;47m▒░░░▒▒░░$Esc[0;37m $Esc[0;97;47m▒▒░░░▒▒░$Esc[0;37m▀$Esc[0m"
     )
 
-    foreach ($Zeile in $Zeilen) {
-        Write-CenteredAnsiText -Text $Zeile -VisibleLength $BannerBreite
+    foreach ($Line in $BannerLines) {
+        Write-CenteredAnsiText -Text $Line -VisibleLength $BannerWidth
     }
 
-    Write-Host "$esc[0m"
+    Write-Host "$Esc[0m"
 }
 
 function Start-RemoteScript {
@@ -117,42 +118,73 @@ function Start-RemoteScript {
         [string]$Name
     )
 
+    $TempScriptPath = Join-Path `
+        -Path $env:TEMP `
+        -ChildPath ("BensTools_" + [guid]::NewGuid().ToString() + ".ps1")
+
     try {
         Write-Host ""
         Write-CenteredText "Starte: $Name" -ForegroundColor Cyan
         Write-Host ""
 
-        $scriptContent = Invoke-RestMethod -Uri $Uri -ErrorAction Stop
+        $ScriptContent = Invoke-RestMethod -Uri $Uri -ErrorAction Stop
 
-        if ([string]::IsNullOrWhiteSpace($scriptContent)) {
+        if ([string]::IsNullOrWhiteSpace($ScriptContent)) {
             throw "Die URL hat keinen Skriptinhalt geliefert."
         }
 
-        Invoke-Expression $scriptContent
+        # UTF-8 ohne BOM: verhindert unsichtbare BOM-Zeichen am Skriptanfang.
+        $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+
+        [System.IO.File]::WriteAllText(
+            $TempScriptPath,
+            $ScriptContent,
+            $Utf8NoBom
+        )
+
+        # Das Tool läuft in einem eigenen Prozess.
+        # exit im Tool beendet damit nicht das Hauptmenü.
+        Start-Process `
+            -FilePath "powershell.exe" `
+            -ArgumentList @(
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-File", "`"$TempScriptPath`""
+            ) `
+            -Wait `
+            -ErrorAction Stop
     }
     catch {
         Write-Host ""
         Write-CenteredText `
             "Fehler beim Starten von '$Name': $($_.Exception.Message)" `
             -ForegroundColor Red
+
+        Write-Host ""
+        Read-Host "Enter drücken, um zum Menü zurückzukehren"
+    }
+    finally {
+        if (Test-Path -LiteralPath $TempScriptPath) {
+            Remove-Item `
+                -LiteralPath $TempScriptPath `
+                -Force `
+                -ErrorAction SilentlyContinue
+        }
     }
 }
 
 do {
     Clear-Host
 
-    # Kleiner Abstand zwischen oberem Fensterrand und Überschrift
+    # Kleine Leerzeile oberhalb der Überschrift
     Write-Host ""
 
-    # Zentrierte ASCII-Art
     Write-BensToolsBanner
 
-    # Lange Trennlinie
     Write-Host ""
     Write-MenuSeparator
     Write-Host ""
 
-    # Zentrierte Menüeinträge
     Write-CenteredText "[1] Office Reset" -ForegroundColor White
     Write-CenteredText "[2] BlockAADWorkplaceJoin" -ForegroundColor White
     Write-CenteredText "[0] Beenden" -ForegroundColor DarkGray
@@ -160,26 +192,19 @@ do {
     Write-Host ""
     Write-CenteredText "Bitte Auswahl eingeben:" -ForegroundColor Cyan
 
-    # Zentrierte Eingabe
-    $choice = Read-CenteredChoice
+    $Choice = Read-CenteredChoice
 
-    switch ($choice) {
+    switch ($Choice) {
         '1' {
             Start-RemoteScript `
                 -Name "Office Reset" `
                 -Uri "https://ben365.de/resetoffice"
-
-            Write-Host ""
-            Read-Host "Enter drücken, um zum Menü zurückzukehren"
         }
 
         '2' {
             Start-RemoteScript `
                 -Name "AADWorkplaceJoin" `
                 -Uri "https://ben365.de/aadworkplacejoin"
-
-            Write-Host ""
-            Read-Host "Enter drücken, um zum Menü zurückzukehren"
         }
 
         '0' {
@@ -198,4 +223,4 @@ do {
         }
     }
 }
-while ($choice -ne '0')
+while ($Choice -ne '0')
