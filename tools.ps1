@@ -1,4 +1,49 @@
+# Ben's Tools
+# Datei als UTF-8 ohne BOM speichern.
+
+# ------------------------------------------------------------
+# Automatische UAC-Abfrage / Administratorrechte
+# ------------------------------------------------------------
+
+$CurrentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
+$CurrentPrincipal = New-Object Security.Principal.WindowsPrincipal($CurrentIdentity)
+$AdministratorRole = [Security.Principal.WindowsBuiltInRole]::Administrator
+
+if (-not $CurrentPrincipal.IsInRole($AdministratorRole)) {
+    try {
+        $ScriptPath = $PSCommandPath
+
+        if ([string]::IsNullOrWhiteSpace($ScriptPath)) {
+            throw "Der Pfad zum Hauptskript konnte nicht bestimmt werden."
+        }
+
+        Start-Process `
+            -FilePath "powershell.exe" `
+            -Verb RunAs `
+            -ArgumentList @(
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-File", "`"$ScriptPath`""
+            ) `
+            -ErrorAction Stop
+    }
+    catch {
+        Write-Host ""
+        Write-Host "Administratorrechte wurden nicht erteilt oder die UAC-Abfrage wurde abgebrochen." `
+            -ForegroundColor Red
+
+        Write-Host ""
+        Read-Host "Enter drücken zum Beenden"
+    }
+
+    exit
+}
+
 $ErrorActionPreference = 'Stop'
+
+# ------------------------------------------------------------
+# Konsolen- und Layout-Funktionen
+# ------------------------------------------------------------
 
 function Get-ConsoleWidth {
     try {
@@ -49,7 +94,7 @@ function Write-CenteredText {
 function Write-MenuSeparator {
     $ConsoleWidth = Get-ConsoleWidth
 
-    # Verhindert einen automatischen Umbruch am rechten Rand.
+    # Zwei Zeichen weniger verhindern Umbruch am rechten Konsolenrand.
     $LineWidth = [Math]::Max(40, $ConsoleWidth - 2)
 
     Write-Host ("=" * $LineWidth) -ForegroundColor DarkGray
@@ -71,11 +116,15 @@ function Read-CenteredChoice {
     return Read-Host
 }
 
+# ------------------------------------------------------------
+# ASCII-Art-Überschrift
+# ------------------------------------------------------------
+
 function Write-BensToolsBanner {
     $Esc = [char]27
 
-    # Je kleiner dieser Wert, desto weiter wandert die Überschrift nach rechts.
-    # Je größer dieser Wert, desto weiter wandert die Überschrift nach links.
+    # Kleinere Zahl = Banner weiter nach rechts.
+    # Größere Zahl = Banner weiter nach links.
     $BannerWidth = 100
 
     $BannerLines = @(
@@ -109,6 +158,10 @@ function Write-BensToolsBanner {
     Write-Host "$Esc[0m"
 }
 
+# ------------------------------------------------------------
+# Remote-Tools getrennt starten
+# ------------------------------------------------------------
+
 function Start-RemoteScript {
     param(
         [Parameter(Mandatory)]
@@ -133,7 +186,7 @@ function Start-RemoteScript {
             throw "Die URL hat keinen Skriptinhalt geliefert."
         }
 
-        # UTF-8 ohne BOM: verhindert unsichtbare BOM-Zeichen am Skriptanfang.
+        # Ohne UTF-8-BOM speichern, damit kein unsichtbares Zeichen am Anfang steht.
         $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
         [System.IO.File]::WriteAllText(
@@ -142,8 +195,8 @@ function Start-RemoteScript {
             $Utf8NoBom
         )
 
-        # Das Tool läuft in einem eigenen Prozess.
-        # exit im Tool beendet damit nicht das Hauptmenü.
+        # Eigenes Fenster / eigener Prozess:
+        # exit im Untertool beendet nur das Untertool.
         Start-Process `
             -FilePath "powershell.exe" `
             -ArgumentList @(
@@ -173,10 +226,14 @@ function Start-RemoteScript {
     }
 }
 
+# ------------------------------------------------------------
+# Hauptmenü
+# ------------------------------------------------------------
+
 do {
     Clear-Host
 
-    # Kleine Leerzeile oberhalb der Überschrift
+    # Kleiner Abstand zum oberen Fensterrand.
     Write-Host ""
 
     Write-BensToolsBanner
