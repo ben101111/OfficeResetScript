@@ -1,87 +1,127 @@
-$IstAdministrator = (
-    [Security.Principal.WindowsPrincipal] `
-    [Security.Principal.WindowsIdentity]::GetCurrent()
-).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+$ErrorActionPreference = 'Stop'
 
-if (-not $IstAdministrator) {
-    Write-Host "Dieses Skript muss als Administrator ausgeführt werden." -ForegroundColor Red
-    Write-Host "Rechtsklick auf PowerShell -> 'Als Administrator ausführen'." -ForegroundColor Yellow
-    Read-Host "Zum Beenden Eingabetaste drücken"
+function Test-IsAdministrator {
+    $CurrentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $CurrentPrincipal = New-Object Security.Principal.WindowsPrincipal($CurrentIdentity)
+
+    return $CurrentPrincipal.IsInRole(
+        [Security.Principal.WindowsBuiltInRole]::Administrator
+    )
+}
+
+function Wait-ForReturn {
+    Write-Host ""
+    Read-Host "Enter drücken, um zu Ben's Tools zurückzukehren"
+}
+
+function Set-BlockAADWorkplaceJoin {
+    $RegistryPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WorkplaceJoin"
+    $ValueName = "BlockAADWorkplaceJoin"
+
+    if (-not (Test-Path -LiteralPath $RegistryPath)) {
+        New-Item -Path $RegistryPath -Force | Out-Null
+    }
+
+    New-ItemProperty `
+        -Path $RegistryPath `
+        -Name $ValueName `
+        -Value 1 `
+        -PropertyType DWord `
+        -Force | Out-Null
+
+    Write-Host ""
+    Write-Host "AAD Workplace Join wurde deaktiviert." -ForegroundColor Green
+    Write-Host "Registry-Wert: $ValueName = 1" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "Eine Ab- und Anmeldung oder ein Neustart kann erforderlich sein." `
+        -ForegroundColor Yellow
+}
+
+function Reset-BlockAADWorkplaceJoin {
+    $RegistryPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WorkplaceJoin"
+    $ValueName = "BlockAADWorkplaceJoin"
+
+    if (Test-Path -LiteralPath $RegistryPath) {
+        Remove-ItemProperty `
+            -Path $RegistryPath `
+            -Name $ValueName `
+            -ErrorAction SilentlyContinue
+    }
+
+    Write-Host ""
+    Write-Host "Windows-Standard wurde wiederhergestellt." -ForegroundColor Green
+    Write-Host "Die Richtlinie BlockAADWorkplaceJoin wurde entfernt." `
+        -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "Eine Ab- und Anmeldung oder ein Neustart kann erforderlich sein." `
+        -ForegroundColor Yellow
+}
+
+if (-not (Test-IsAdministrator)) {
+    Clear-Host
+    Write-Host ""
+    Write-Host "Dieses Tool muss mit Administratorrechten ausgeführt werden." `
+        -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Starte Ben's Tools als Administrator und wähle das Tool erneut." `
+        -ForegroundColor Yellow
+
+    Wait-ForReturn
     exit 1
 }
 
-$RegistryPfad = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WorkplaceJoin"
-$WertName = "BlockAADWorkplaceJoin"
+do {
+    Clear-Host
 
-Clear-Host
-Write-Host "==============================================" -ForegroundColor Cyan
-Write-Host " Microsoft Entra Workplace Join Verwaltung" -ForegroundColor Cyan
-Write-Host "==============================================" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "1: AAD Workplace Join deaktivieren"
-Write-Host "2: Auf Windows-Standard zurücksetzen"
-Write-Host "0: Beenden"
-Write-Host ""
+    Write-Host ""
+    Write-Host "==============================================" -ForegroundColor Cyan
+    Write-Host "         BlockAADWorkplaceJoin" -ForegroundColor Cyan
+    Write-Host "==============================================" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "[1] AAD Workplace Join deaktivieren"
+    Write-Host "[2] Auf Windows-Standard zurücksetzen"
+    Write-Host "[0] Zurück zu Ben's Tools"
+    Write-Host ""
 
-$Auswahl = Read-Host "Bitte Auswahl eingeben"
+    $Choice = Read-Host "Bitte Auswahl eingeben"
 
-switch ($Auswahl) {
-    "1" {
-        
-        if (-not (Test-Path $RegistryPfad)) {
-            New-Item -Path $RegistryPfad -Force | Out-Null
-        }
-
-        
-        New-ItemProperty `
-            -Path $RegistryPfad `
-            -Name $WertName `
-            -Value 1 `
-            -PropertyType DWord `
-            -Force | Out-Null
-
-        Write-Host ""
-        Write-Host "AAD Workplace Join wurde deaktiviert." -ForegroundColor Green
-        Write-Host "Ein Neustart oder eine erneute Benutzeranmeldung kann erforderlich sein." -ForegroundColor Yellow
-    }
-
-    "2" {
-        
-        if (Test-Path $RegistryPfad) {
-            Remove-ItemProperty `
-                -Path $RegistryPfad `
-                -Name $WertName `
-                -ErrorAction SilentlyContinue
-
-            
-            $Eigenschaften = Get-ItemProperty -Path $RegistryPfad -ErrorAction SilentlyContinue
-            $BenutzerdefinierteEigenschaften = $Eigenschaften.PSObject.Properties |
-                Where-Object {
-                    $_.Name -notmatch "^PS(Path|ParentPath|ChildName|Drive|Provider)$"
-                }
-
-            if (-not $BenutzerdefinierteEigenschaften) {
-                Remove-Item -Path $RegistryPfad -Force -ErrorAction SilentlyContinue
+    switch ($Choice) {
+        '1' {
+            try {
+                Set-BlockAADWorkplaceJoin
             }
+            catch {
+                Write-Host ""
+                Write-Host "Fehler: $($_.Exception.Message)" -ForegroundColor Red
+            }
+
+            Wait-ForReturn
         }
 
-        Write-Host ""
-        Write-Host "Die Richtlinie wurde entfernt." -ForegroundColor Green
-        Write-Host "AAD Workplace Join verwendet wieder das Windows-Standardverhalten." -ForegroundColor Green
-        Write-Host "Ein Neustart oder eine erneute Benutzeranmeldung kann erforderlich sein." -ForegroundColor Yellow
-    }
+        '2' {
+            try {
+                Reset-BlockAADWorkplaceJoin
+            }
+            catch {
+                Write-Host ""
+                Write-Host "Fehler: $($_.Exception.Message)" -ForegroundColor Red
+            }
 
-    "0" {
-        Write-Host "Beendet."
-        exit 0
-    }
+            Wait-ForReturn
+        }
 
-    default {
-        Write-Host ""
-        Write-Host "Ungültige Auswahl." -ForegroundColor Red
-        exit 1
+        '0' {
+            # Beendet nur diesen separaten Tool-Prozess.
+            exit 0
+        }
+
+        default {
+            Write-Host ""
+            Write-Host "Ungültige Auswahl. Bitte 1, 2 oder 0 eingeben." `
+                -ForegroundColor Yellow
+
+            Start-Sleep -Seconds 2
+        }
     }
 }
-
-Write-Host ""
-Read-Host "Zum Beenden Eingabetaste drücken"
+while ($true)
