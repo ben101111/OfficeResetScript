@@ -1,4 +1,4 @@
-﻿# AADWorkplaceJoin-Verwaltung.ps1
+# AADWorkplaceJoin-Verwaltung.ps1
 # Muss als Administrator ausgeführt werden.
 
 # Prüfen, ob PowerShell mit Administratorrechten läuft
