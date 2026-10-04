@@ -1,7 +1,3 @@
-# AADWorkplaceJoin-Verwaltung.ps1
-# Muss als Administrator ausgeführt werden.
-
-# Prüfen, ob PowerShell mit Administratorrechten läuft
 $IstAdministrator = (
     [Security.Principal.WindowsPrincipal] `
     [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -31,12 +27,12 @@ $Auswahl = Read-Host "Bitte Auswahl eingeben"
 
 switch ($Auswahl) {
     "1" {
-        # Registry-Schlüssel bei Bedarf anlegen
+        
         if (-not (Test-Path $RegistryPfad)) {
             New-Item -Path $RegistryPfad -Force | Out-Null
         }
 
-        # DWORD-Wert auf 1 setzen = Workplace Join blockieren
+        
         New-ItemProperty `
             -Path $RegistryPfad `
             -Name $WertName `
@@ -50,14 +46,14 @@ switch ($Auswahl) {
     }
 
     "2" {
-        # Richtlinienwert löschen = Standardverhalten wiederherstellen
+        
         if (Test-Path $RegistryPfad) {
             Remove-ItemProperty `
                 -Path $RegistryPfad `
                 -Name $WertName `
                 -ErrorAction SilentlyContinue
 
-            # Leeren Schlüssel optional entfernen
+            
             $Eigenschaften = Get-ItemProperty -Path $RegistryPfad -ErrorAction SilentlyContinue
             $BenutzerdefinierteEigenschaften = $Eigenschaften.PSObject.Properties |
                 Where-Object {
