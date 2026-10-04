@@ -1,8 +1,11 @@
 # Ben's Tools
-# Datei als UTF-8 ohne BOM speichern.
+# Datei/Remote-Inhalt als UTF-8 ohne BOM bereitstellen.
 
 # ------------------------------------------------------------
-# Automatische UAC-Abfrage / Administratorrechte
+# Selbst-Elevation / UAC-Abfrage
+# Funktioniert sowohl für:
+# .\BensTools.ps1
+# irm https://ben365.de/tools | iex
 # ------------------------------------------------------------
 
 $CurrentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -13,18 +16,36 @@ if (-not $CurrentPrincipal.IsInRole($AdministratorRole)) {
     try {
         $ScriptPath = $PSCommandPath
 
+        # Bei "irm https://ben365.de/tools | iex" ist $PSCommandPath leer.
+        # Das Haupttool wird daher nochmals heruntergeladen und temporär gespeichert.
         if ([string]::IsNullOrWhiteSpace($ScriptPath)) {
-            throw "Der Pfad zum Hauptskript konnte nicht bestimmt werden."
+            $ScriptPath = Join-Path `
+                -Path $env:TEMP `
+                -ChildPath ("BensTools_" + [guid]::NewGuid().ToString() + ".ps1")
+
+            $ScriptContent = Invoke-RestMethod `
+                -Uri "https://ben365.de/tools" `
+                -ErrorAction Stop
+
+            if ([string]::IsNullOrWhiteSpace($ScriptContent)) {
+                throw "Die URL hat keinen Skriptinhalt geliefert."
+            }
+
+            # UTF-8 ohne BOM, damit kein unsichtbares Zeichen am Anfang entsteht.
+            $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+
+            [System.IO.File]::WriteAllText(
+                $ScriptPath,
+                $ScriptContent,
+                $Utf8NoBom
+            )
         }
 
+        # UAC-Abfrage und erneuter Start mit Administratorrechten.
         Start-Process `
             -FilePath "powershell.exe" `
             -Verb RunAs `
-            -ArgumentList @(
-                "-NoProfile",
-                "-ExecutionPolicy", "Bypass",
-                "-File", "`"$ScriptPath`""
-            ) `
+            -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$ScriptPath`"" `
             -ErrorAction Stop
     }
     catch {
@@ -33,9 +54,12 @@ if (-not $CurrentPrincipal.IsInRole($AdministratorRole)) {
             -ForegroundColor Red
 
         Write-Host ""
+        Write-Host "Details: $($_.Exception.Message)" -ForegroundColor DarkGray
+
         Read-Host "Enter drücken zum Beenden"
     }
 
+    # Nicht erhöhte Ausgangsinstanz beenden.
     exit
 }
 
@@ -94,7 +118,7 @@ function Write-CenteredText {
 function Write-MenuSeparator {
     $ConsoleWidth = Get-ConsoleWidth
 
-    # Zwei Zeichen weniger verhindern Umbruch am rechten Konsolenrand.
+    # Zwei Zeichen weniger verhindern den Umbruch der Linie am rechten Rand.
     $LineWidth = [Math]::Max(40, $ConsoleWidth - 2)
 
     Write-Host ("=" * $LineWidth) -ForegroundColor DarkGray
@@ -123,8 +147,8 @@ function Read-CenteredChoice {
 function Write-BensToolsBanner {
     $Esc = [char]27
 
-    # Kleinere Zahl = Banner weiter nach rechts.
-    # Größere Zahl = Banner weiter nach links.
+    # Kleinere Zahl = Banner nach rechts.
+    # Größere Zahl = Banner nach links.
     $BannerWidth = 100
 
     $BannerLines = @(
@@ -159,7 +183,7 @@ function Write-BensToolsBanner {
 }
 
 # ------------------------------------------------------------
-# Remote-Tools getrennt starten
+# Remote-Tools in separatem Prozess starten
 # ------------------------------------------------------------
 
 function Start-RemoteScript {
@@ -186,7 +210,7 @@ function Start-RemoteScript {
             throw "Die URL hat keinen Skriptinhalt geliefert."
         }
 
-        # Ohne UTF-8-BOM speichern, damit kein unsichtbares Zeichen am Anfang steht.
+        # Remote-Skript ohne BOM als echte .ps1-Datei speichern.
         $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
         [System.IO.File]::WriteAllText(
@@ -195,15 +219,11 @@ function Start-RemoteScript {
             $Utf8NoBom
         )
 
-        # Eigenes Fenster / eigener Prozess:
-        # exit im Untertool beendet nur das Untertool.
+        # Das Untertool läuft getrennt.
+        # exit im Tool beendet nicht Ben's Tools.
         Start-Process `
             -FilePath "powershell.exe" `
-            -ArgumentList @(
-                "-NoProfile",
-                "-ExecutionPolicy", "Bypass",
-                "-File", "`"$TempScriptPath`""
-            ) `
+            -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$TempScriptPath`"" `
             -Wait `
             -ErrorAction Stop
     }
@@ -233,7 +253,7 @@ function Start-RemoteScript {
 do {
     Clear-Host
 
-    # Kleiner Abstand zum oberen Fensterrand.
+    # Abstand vom oberen Fensterrand.
     Write-Host ""
 
     Write-BensToolsBanner
